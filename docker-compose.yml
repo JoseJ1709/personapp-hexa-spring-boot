@@ -1,0 +1,137 @@
+services:
+  # ============================================
+  # Base de Datos MariaDB
+  # ============================================
+  mariadb:
+    image: mariadb:11.2
+    container_name: personapp-mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: persona_db
+      MYSQL_USER: persona_db
+      MYSQL_PASSWORD: persona_db
+      TZ: America/Bogota
+    ports:
+      - "3307:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./scripts/persona_ddl_maria.sql:/docker-entrypoint-initdb.d/01-ddl.sql
+      - ./scripts/persona_dml_maria.sql:/docker-entrypoint-initdb.d/02-dml.sql
+    networks:
+      - personapp-network
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # ============================================
+  # Base de Datos MongoDB
+  # ============================================
+  mongodb:
+    image: mongo:7.0
+    container_name: personapp-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+      MONGO_INITDB_DATABASE: persona_db
+      TZ: America/Bogota
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./scripts/persona_init_mongo.js:/docker-entrypoint-initdb.d/00-init.js
+      - ./scripts/persona_ddl_mongo.js:/docker-entrypoint-initdb.d/01-ddl.js
+      - ./scripts/persona_dml_mongo.js:/docker-entrypoint-initdb.d/02-dml.js
+    networks:
+      - personapp-network
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # ============================================
+  # Aplicación Spring Boot REST API
+  # ============================================
+  personapp-rest:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: personapp-rest:latest
+    container_name: personapp-rest-api
+    environment:
+      # ===== MariaDB Configuration =====
+      SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb:3306/persona_db
+      SPRING_DATASOURCE_USERNAME: persona_db
+      SPRING_DATASOURCE_PASSWORD: persona_db
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.mariadb.jdbc.Driver
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+      SPRING_JPA_OPEN_IN_VIEW: "false"
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MariaDBDialect
+
+      # ===== MongoDB Configuration =====
+      SPRING_DATA_MONGODB_HOST: mongodb
+      SPRING_DATA_MONGODB_PORT: 27017
+      SPRING_DATA_MONGODB_DATABASE: persona_db
+      SPRING_DATA_MONGODB_USERNAME: persona_db
+      SPRING_DATA_MONGODB_PASSWORD: persona_db
+      SPRING_DATA_MONGODB_AUTHENTICATION_DATABASE: admin
+
+      # ===== Server Configuration =====
+      SERVER_PORT: 3000
+      SPRING_APPLICATION_NAME: PersonApp API
+
+      # ===== Spring Configuration =====
+      SPRING_MAIN_ALLOW_CIRCULAR_REFERENCES: "true"
+
+      # ===== Logging Configuration =====
+      LOGGING_LEVEL_ROOT: INFO
+      LOGGING_FILE_NAME: /app/logs/persona.log
+
+      # ===== Swagger Configuration =====
+      SPRINGDOC_API_DOCS_PATH: /api-docs
+
+      # ===== Timezone =====
+      TZ: America/Bogota
+    ports:
+      - "3000:3000"
+    volumes:
+      - app_logs:/app/logs
+    networks:
+      - personapp-network
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/swagger-ui.html"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+# ============================================
+# Volúmenes
+# ============================================
+volumes:
+  mariadb_data:
+    driver: local
+  mongodb_data:
+    driver: local
+  app_logs:
+    driver: local
+
+# ============================================
+# Redes
+# ============================================
+networks:
+  personapp-network:
+    driver: bridge
