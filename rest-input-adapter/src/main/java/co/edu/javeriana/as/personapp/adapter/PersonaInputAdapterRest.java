@@ -12,8 +12,8 @@ import co.edu.javeriana.as.personapp.application.port.out.PersonOutputPort;
 import co.edu.javeriana.as.personapp.application.usecase.PersonUseCase;
 import co.edu.javeriana.as.personapp.common.annotations.Adapter;
 import co.edu.javeriana.as.personapp.common.exceptions.InvalidOptionException;
+import co.edu.javeriana.as.personapp.common.exceptions.NoExistException;
 import co.edu.javeriana.as.personapp.common.setup.DatabaseOption;
-import co.edu.javeriana.as.personapp.domain.Gender;
 import co.edu.javeriana.as.personapp.domain.Person;
 import co.edu.javeriana.as.personapp.mapper.PersonaMapperRest;
 import co.edu.javeriana.as.personapp.model.request.PersonaRequest;
@@ -68,14 +68,42 @@ public class PersonaInputAdapterRest {
 
 	public PersonaResponse crearPersona(PersonaRequest request) {
 		try {
-			setPersonOutputPortInjection(request.getDatabase());
+			String dbOption = setPersonOutputPortInjection(request.getDatabase());
 			Person person = personInputPort.create(personaMapperRest.fromAdapterToDomain(request));
-			return personaMapperRest.fromDomainToAdapterRestMaria(person);
+			if (dbOption.equalsIgnoreCase(DatabaseOption.MARIA.toString())) {
+				return personaMapperRest.fromDomainToAdapterRestMaria(person);
+			} else {
+				return personaMapperRest.fromDomainToAdapterRestMongo(person);
+			}
 		} catch (InvalidOptionException e) {
 			log.warn(e.getMessage());
-			//return new PersonaResponse("", "", "", "", "", "", "");
 		}
 		return null;
+	}
+
+	public PersonaResponse actualizarPersona(Integer dni, PersonaRequest request) {
+		try {
+			String dbOption = setPersonOutputPortInjection(request.getDatabase());
+			Person person = personInputPort.edit(dni, personaMapperRest.fromAdapterToDomain(request));
+			if (dbOption.equalsIgnoreCase(DatabaseOption.MARIA.toString())) {
+				return personaMapperRest.fromDomainToAdapterRestMaria(person);
+			} else {
+				return personaMapperRest.fromDomainToAdapterRestMongo(person);
+			}
+		} catch (InvalidOptionException | NoExistException e) {
+			log.warn(e.getMessage());
+		}
+		return null;
+	}
+
+	public Boolean eliminarPersona(Integer dni, String database) {
+		try {
+			setPersonOutputPortInjection(database);
+			return personInputPort.drop(dni);
+		} catch (InvalidOptionException | NoExistException e) {
+			log.warn(e.getMessage());
+			return false;
+		}
 	}
 
 }

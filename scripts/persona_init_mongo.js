@@ -16,9 +16,9 @@ db.createUser({
     ]
 });
 
-print('✅ Usuario persona_db creado exitosamente');
+print('Usuario persona_db creado exitosamente');
 
 // Cambiar a la base de datos persona_db
 db = db.getSiblingDB('persona_db');
 
-print('✅ Base de datos persona_db lista para usar');
+print('Base de datos persona_db lista para usar');

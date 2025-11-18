@@ -69,9 +69,13 @@ public class ProfesionInputAdapterRest {
 
     public ProfesionResponse crearProfesion(ProfesionRequest request) {
         try {
-            setProfessionOutputPortInjection(request.getDatabase());
+            String dbOption = setProfessionOutputPortInjection(request.getDatabase());
             Profession profession = professionInputPort.create(profesionMapperRest.fromAdapterToDomain(request));
-            return profesionMapperRest.fromDomainToAdapterRestMaria(profession);
+            if (dbOption.equalsIgnoreCase(DatabaseOption.MARIA.toString())) {
+                return profesionMapperRest.fromDomainToAdapterRestMaria(profession);
+            } else {
+                return profesionMapperRest.fromDomainToAdapterRestMongo(profession);
+            }
         } catch (InvalidOptionException e) {
             log.warn(e.getMessage());
         }
@@ -80,9 +84,13 @@ public class ProfesionInputAdapterRest {
 
     public ProfesionResponse actualizarProfesion(Integer id, ProfesionRequest request) {
         try {
-            setProfessionOutputPortInjection(request.getDatabase());
+            String dbOption = setProfessionOutputPortInjection(request.getDatabase());
             Profession profession = professionInputPort.edit(id, profesionMapperRest.fromAdapterToDomain(request));
-            return profesionMapperRest.fromDomainToAdapterRestMaria(profession);
+            if (dbOption.equalsIgnoreCase(DatabaseOption.MARIA.toString())) {
+                return profesionMapperRest.fromDomainToAdapterRestMaria(profession);
+            } else {
+                return profesionMapperRest.fromDomainToAdapterRestMongo(profession);
+            }
         } catch (InvalidOptionException | NoExistException e) {
             log.warn(e.getMessage());
         }

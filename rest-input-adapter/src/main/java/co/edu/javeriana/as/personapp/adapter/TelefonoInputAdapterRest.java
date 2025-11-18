@@ -69,9 +69,13 @@ public class TelefonoInputAdapterRest {
 
     public TelefonoResponse crearTelefono(TelefonoRequest request) {
         try {
-            setPhoneOutputPortInjection(request.getDatabase());
+            String dbOption = setPhoneOutputPortInjection(request.getDatabase());
             Phone phone = phoneInputPort.create(telefonoMapperRest.fromAdapterToDomain(request));
-            return telefonoMapperRest.fromDomainToAdapterRestMaria(phone);
+            if (dbOption.equalsIgnoreCase(DatabaseOption.MARIA.toString())) {
+                return telefonoMapperRest.fromDomainToAdapterRestMaria(phone);
+            } else {
+                return telefonoMapperRest.fromDomainToAdapterRestMongo(phone);
+            }
         } catch (InvalidOptionException e) {
             log.warn(e.getMessage());
         }
@@ -80,9 +84,13 @@ public class TelefonoInputAdapterRest {
 
     public TelefonoResponse actualizarTelefono(String numero, TelefonoRequest request) {
         try {
-            setPhoneOutputPortInjection(request.getDatabase());
+            String dbOption = setPhoneOutputPortInjection(request.getDatabase());
             Phone phone = phoneInputPort.edit(numero, telefonoMapperRest.fromAdapterToDomain(request));
-            return telefonoMapperRest.fromDomainToAdapterRestMaria(phone);
+            if (dbOption.equalsIgnoreCase(DatabaseOption.MARIA.toString())) {
+                return telefonoMapperRest.fromDomainToAdapterRestMaria(phone);
+            } else {
+                return telefonoMapperRest.fromDomainToAdapterRestMongo(phone);
+            }
         } catch (InvalidOptionException | NoExistException e) {
             log.warn(e.getMessage());
         }

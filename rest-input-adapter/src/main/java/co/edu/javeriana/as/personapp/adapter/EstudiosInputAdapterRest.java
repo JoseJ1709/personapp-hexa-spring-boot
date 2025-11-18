@@ -69,9 +69,13 @@ public class EstudiosInputAdapterRest {
 
     public EstudiosResponse crearEstudio(EstudiosRequest request) {
         try {
-            setStudyOutputPortInjection(request.getDatabase());
+            String dbOption = setStudyOutputPortInjection(request.getDatabase());
             Study study = studyInputPort.create(estudiosMapperRest.fromAdapterToDomain(request));
-            return estudiosMapperRest.fromDomainToAdapterRestMaria(study);
+            if (dbOption.equalsIgnoreCase(DatabaseOption.MARIA.toString())) {
+                return estudiosMapperRest.fromDomainToAdapterRestMaria(study);
+            } else {
+                return estudiosMapperRest.fromDomainToAdapterRestMongo(study);
+            }
         } catch (InvalidOptionException e) {
             log.warn(e.getMessage());
         }
@@ -80,9 +84,13 @@ public class EstudiosInputAdapterRest {
 
     public EstudiosResponse actualizarEstudio(Integer personId, Integer professionId, EstudiosRequest request) {
         try {
-            setStudyOutputPortInjection(request.getDatabase());
+            String dbOption = setStudyOutputPortInjection(request.getDatabase());
             Study study = studyInputPort.edit(personId, professionId, estudiosMapperRest.fromAdapterToDomain(request));
-            return estudiosMapperRest.fromDomainToAdapterRestMaria(study);
+            if (dbOption.equalsIgnoreCase(DatabaseOption.MARIA.toString())) {
+                return estudiosMapperRest.fromDomainToAdapterRestMaria(study);
+            } else {
+                return estudiosMapperRest.fromDomainToAdapterRestMongo(study);
+            }
         } catch (InvalidOptionException | NoExistException e) {
             log.warn(e.getMessage());
         }
