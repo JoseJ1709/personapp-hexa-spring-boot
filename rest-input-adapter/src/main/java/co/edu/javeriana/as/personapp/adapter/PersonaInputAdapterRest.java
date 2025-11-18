@@ -61,7 +61,10 @@ public class PersonaInputAdapterRest {
 			}
 			
 		} catch (InvalidOptionException e) {
-			log.warn(e.getMessage());
+			log.warn("Invalid database option: {}", e.getMessage());
+			return new ArrayList<PersonaResponse>();
+		} catch (Exception e) {
+			log.error("Error accessing database {}: {}", database, e.getMessage(), e);
 			return new ArrayList<PersonaResponse>();
 		}
 	}

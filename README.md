@@ -627,9 +627,9 @@ Ver archivo [LICENSE](LICENSE) para más detalles.
 ---
 
 ## Autor
+Santiago Botero Pacheo
+José Jaramillo
+Andrés Centanaro
 
 Desarrollado como parte del Laboratorio 2 - Arquitectura de Software.
 
----
-
-¡Listo! Ya puedes ejecutar y probar tu aplicación.
